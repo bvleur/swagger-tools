@@ -670,5 +670,39 @@ describe('Swagger Metadata Middleware v2.0', function () {
         done();
       });
     });
+
+    it('should handle array type with integer items', function (done) {
+      var values = [42, 1337];
+
+      var swaggerObject = _.cloneDeep(petStoreJson);
+
+      swaggerObject.paths['/pets'].get.parameters.push({
+        in: 'query',
+        name: 'myArr',
+        description: 'Simple array value with integers',
+        required: true,
+        type: 'array',
+        items: {
+          type: 'integer'
+        },
+        collectionFormat: 'pipes'
+      });
+
+      helpers.createServer([swaggerObject], {
+        handler: function (req, res) {
+          assert.deepEqual(values, req.swagger.params.myArr.value);
+
+          res.end('OK');
+        }
+      }, function(app) {
+        var v = values.join('|');
+
+        request(app)
+          .get('/api/pets')
+          .query({myArr: v})
+          .expect(200)
+          .end(helpers.expectContent('OK', done)); // OK is from default handler
+      });
+    });
   });
 });
